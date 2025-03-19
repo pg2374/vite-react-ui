@@ -16,6 +16,7 @@ jobs:
         with:
           ref: develop
           fetch-depth: 0
+          token: ${{ secrets.PAT }}
           
       - name: Deploy to QA (Merge to QA branch)
         run: |

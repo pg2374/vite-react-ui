@@ -38,12 +38,14 @@ jobs:
       
       # Wait for Amplify deployment to complete
       - name: Wait for QA deployment
-        run: sleep 120  # Wait 2 minutes for Amplify deployment
+        run: sleep 120 # Wait 2 minutes for Amplify deployment
 
   run-cypress-tests:
     name: Run Cypress Tests on QA
     needs: deploy-to-qa
     runs-on: ubuntu-latest
+    outputs:
+      test_result: ${{ steps.set_result.outputs.result }}
     steps:
       - uses: actions/checkout@v3
       
@@ -64,15 +66,15 @@ jobs:
           config: baseUrl=https://qa.dofuwl7rbpbt1.amplifyapp.com
         continue-on-error: true
       
-      # Store test results
-      - name: Process test results
+      # Store test results for next job
+      - name: Set test result output
+        id: set_result
         run: |
           if [ "${{ steps.cypress.outcome }}" == "success" ]; then
-            echo "CYPRESS_RESULT=✅ Passed" >> $GITHUB_ENV
+            echo "result=✅ Passed" >> $GITHUB_OUTPUT
           else
-            echo "CYPRESS_RESULT=❌ Failed" >> $GITHUB_ENV
+            echo "result=❌ Failed" >> $GITHUB_OUTPUT
           fi
-          echo "WORKFLOW_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_ENV
 
   notify-slack:
     name: Notify Slack
@@ -85,7 +87,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "*Deployment & Test Results*\n• Repository: ${{ github.repository }}\n• Environment: QA\n• Commit: ${{ github.sha }}\n• Cypress Tests: ${{ env.CYPRESS_RESULT }}\n• <${{ env.WORKFLOW_URL }}|View GitHub Actions Run> | <https://qa.dofuwl7rbpbt1.amplifyapp.com|View QA App>"
+              "text": "*Deployment & Test Results*\n• Repository: ${{ github.repository }}\n• Environment: QA\n• Commit: ${{ github.sha }}\n• Cypress Tests: ${{ needs.run-cypress-tests.outputs.test_result }}\n• GitHub Actions: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\n• QA App: https://qa.dofuwl7rbpbt1.amplifyapp.com"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

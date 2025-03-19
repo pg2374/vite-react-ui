@@ -1,0 +1,137 @@
+name: Test and Deploy Pipeline
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
+
+jobs:
+  deploy-to-qa:
+    name: Deploy to QA Environment
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: develop
+          
+      - name: Deploy to QA (Merge to QA branch)
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git fetch origin qa
+          git checkout qa
+          git merge origin/develop
+          git push origin qa
+        # This will trigger Amplify to deploy the QA environment
+      
+      # Wait for Amplify deployment to complete
+      - name: Wait for QA deployment
+        run: sleep 120  # Wait 2 minutes for Amplify deployment
+
+  run-cypress-tests:
+    name: Run Cypress Tests on QA
+    needs: deploy-to-qa
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      # Run Cypress tests against QA environment
+      - name: Run Cypress Tests
+        id: cypress
+        uses: cypress-io/github-action@v5
+        with:
+          config: baseUrl=https://qa.dofuwl7rbpbt1.amplifyapp.com
+        continue-on-error: true
+      
+      # Store test results
+      - name: Process test results
+        run: |
+          if [ "${{ steps.cypress.outcome }}" == "success" ]; then
+            echo "CYPRESS_RESULT=✅ Passed" >> $GITHUB_ENV
+          else
+            echo "CYPRESS_RESULT=❌ Failed" >> $GITHUB_ENV
+          fi
+          echo "WORKFLOW_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_ENV
+
+  notify-slack:
+    name: Notify Slack
+    needs: run-cypress-tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack Notification
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Deployment & Test Results"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn", 
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\nQA"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n`${{ github.sha }}`"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Cypress Tests:*\n${{ env.CYPRESS_RESULT }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View GitHub Actions Run"
+                      },
+                      "url": "${{ env.WORKFLOW_URL }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View QA App"
+                      },
+                      "url": "https://qa.dofuwl7rbpbt1.amplifyapp.com"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

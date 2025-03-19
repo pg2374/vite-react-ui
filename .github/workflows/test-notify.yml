@@ -22,7 +22,7 @@ jobs:
           git config --global user.email 'actions@github.com'
           git fetch origin qa
           git checkout qa
-          git merge origin/develop
+          git merge origin/develop --allow-unrelated-histories
           git push origin qa
         # This will trigger Amplify to deploy the QA environment
       
@@ -75,62 +75,7 @@ jobs:
         with:
           payload: |
             {
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "Deployment & Test Results"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn", 
-                      "text": "*Repository:*\n${{ github.repository }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Environment:*\nQA"
-                    }
-                  ]
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Commit:*\n`${{ github.sha }}`"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Cypress Tests:*\n${{ env.CYPRESS_RESULT }}"
-                    }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "View GitHub Actions Run"
-                      },
-                      "url": "${{ env.WORKFLOW_URL }}"
-                    },
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "View QA App"
-                      },
-                      "url": "https://qa.dofuwl7rbpbt1.amplifyapp.com"
-                    }
-                  ]
-                }
-              ]
+              "text": "*Deployment & Test Results*\n• Repository: ${{ github.repository }}\n• Environment: QA\n• Commit: ${{ github.sha }}\n• Cypress Tests: ${{ env.CYPRESS_RESULT }}\n• <${{ env.WORKFLOW_URL }}|View GitHub Actions Run> | <https://qa.dofuwl7rbpbt1.amplifyapp.com|View QA App>"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

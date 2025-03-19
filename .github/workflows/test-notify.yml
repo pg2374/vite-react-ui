@@ -54,7 +54,7 @@ jobs:
           if [[ "${{ github.ref_name }}" =~ "RB/SD/DEV-[0-9]+$" ]]; then
             echo "script=test:e2e" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref_name }}" =~ (main|develop|qa)$ ]]; then
-            echo "script=test:feature" >> $GITHUB_OUTPUT
+            echo "script=cy:run" >> $GITHUB_OUTPUT
           else
             echo "No tests found, skipping..."
             echo "::set-output name=exit_code::0"

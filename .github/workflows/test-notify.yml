@@ -32,6 +32,7 @@ jobs:
             git add .
             git commit -m "Merge develop into qa (with conflict resolution)"
           fi
+          git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
           git push origin qa
       
       # Wait for Amplify deployment to complete

@@ -1,0 +1,17 @@
+name: Pull Request
+
+on:
+  pull_request:
+
+jobs:
+  pr:
+    uses: pg2374/cypress-slack-demo/.github/workflows/cypress.yaml@main
+    with:
+      node-version: '18'
+
+  notify:
+    needs: pr
+    if: always()
+    uses: ./.github/workflows/notify-slack.yaml
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

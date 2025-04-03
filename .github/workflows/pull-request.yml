@@ -1,14 +1,18 @@
 name: Pull Request
-
 on:
   pull_request:
-
 jobs:
   pr:
     uses: pg2374/cypress-slack-demo/.github/workflows/cypress.yaml@main
     with:
       node-version: '18'
-
+  debug:
+    needs: pr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug PR output
+        run: |
+          echo "Cypress status from PR job: ${{ needs.pr.outputs.cypress-status }}"
   notify:
     needs: pr
     if: always()

@@ -6,14 +6,28 @@ on:
       cypress-status:
         required: true
         type: string
+      environment:
+        required: false
+        type: string
+        default: "N/A"
     secrets:
       SLACK_WEBHOOK_URL:
         required: true
 
 jobs:
   notify:
+    if: ${{ inputs.cypress-status == 'success' || inputs.cypress-status == 'failure' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Cypress tests status
+        run: |
+          echo "Cypress status input: ${{ inputs.cypress-status }}"
+      - name: Handle missing status
+        run: |
+          echo "Raw input: ${{ inputs.cypress-status }}"
+          if [ -z "${{ inputs.cypress-status }}" ]; then
+            echo "Cypress likely cancelled or skipped."
+          fi
       - name: Send Slack message
         uses: slackapi/slack-github-action@v1.23.0
         with:
@@ -32,7 +46,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "• *Repository:* ${{ github.repository }}\n• *Environment:* DEV\n• *Commit:* `${{ github.sha }}`\n• *Status:* ${{ inputs.cypress-status == 'success' && '✅ Passed' || '❌ Failed' }}"
+                    "text": "• *Repository:* ${{ github.repository }}\n• *Environment:* `${{ inputs.environment }}`\n• *Commit:* `${{ github.sha }}`\n• *Status:* ${{ inputs.cypress-status == 'success' && '✅ Passed' || '❌ Failed' }}"
                   }
                 },
                 {

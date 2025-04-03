@@ -13,5 +13,7 @@ jobs:
     needs: pr
     if: always()
     uses: ./.github/workflows/notify-slack.yaml
+    with:
+      cypress-status: ${{ needs.pr.outputs.cypress-status }}
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

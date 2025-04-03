@@ -1,0 +1,45 @@
+name: Run Cypress Tests
+
+on:
+  workflow_call:
+    inputs:
+      gha-runner:
+        type: string
+        default: ubuntu-latest
+      node-version:
+        type: string
+        default: "18"
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
+
+jobs:
+  cypress-test:
+    name: Cypress Tests
+    runs-on: ${{ inputs.gha-runner }}
+    outputs:
+      cypress-status: ${{ steps.cypress.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Cypress
+        id: cypress
+        run: npx cypress run
+
+  notify:
+    name: Notify Slack
+    needs: cypress-test
+    if: always()
+    uses: ./.github/workflows/notify-slack.yaml
+    with:
+      cypress-status: ${{ needs.cypress-test.outputs.cypress-status }}
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,0 +1,30 @@
+name: Deploy to DEV
+
+on:
+  push:
+    branches: ["develop"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Simulate Deploy to DEV
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Simulate deploy step
+        run: |
+          echo "Simulating deploy to DEV environment..."
+          sleep 10
+          echo "Deploy complete ✅"
+
+  run-cypress:
+    name: Run Cypress Tests After Deploy
+    needs: deploy
+    uses: ./.github/workflows/run-cypress.yaml
+    with:
+      gha-runner: ubuntu-latest
+      node-version: '18'
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

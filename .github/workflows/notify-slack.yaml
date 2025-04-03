@@ -14,35 +14,35 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Check passed status input
-        run: |
-          echo "Input to notify: ${{ inputs.cypress-status }}"
       - name: Send Slack message
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
             {
+              "text": "Cypress result notification.",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "Cypress Test Results: ${{ github.repository }}"
+                    "text": ":zap: Cypress Test Results"
                   }
                 },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Status:* ${{ inputs.cypress-status == 'success' && '✅ Passed' || '❌ Failed' }}"
+                    "text": "• *Repository:* ${{ github.repository }}\n• *Environment:* DEV\n• *Commit:* `${{ github.sha }}`\n• *Status:* ${{ inputs.cypress-status == 'success' && '✅ Passed' || '❌ Failed' }}"
                   }
                 },
                 {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Details:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View on GitHub Actions>"
-                  }
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": ":eyes: *<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View GitHub Actions Run>*"
+                    }
+                  ]
                 }
               ]
             }
